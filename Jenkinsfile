@@ -40,29 +40,45 @@ pipeline {
             }
         }
 
-        stage('Import to RTM') {
-            steps {
-                script {
-                    bat """
-                        powershell -Command "Compress-Archive -Path 'target\\*.xml' -DestinationPath 'rtm.zip' -Force"
-                    """
+        // stage('Import to RTM') {
+        //     steps {
+        //         script {
+        //             bat """
+        //                 powershell -Command "Compress-Archive -Path 'target\\*.xml' -DestinationPath 'rtm.zip' -Force"
+        //             """
 
-                    def resp = bat(
-                        script: """
-                            curl -s -X POST "${env.RTM_URL}/api/v2/automation/import-test-results" ^
-                                -H "Authorization: Bearer ${env.RTM_API_TOKEN}" ^
-                                -F projectKey="${params.RTM_PROJECT_KEY}" ^
-                                -F testExecutionKey="${params.RTM_TEST_EXEC_KEY}" ^
-                                -F reportType="JUNIT" ^
-                                -F file=@rtm.zip
-                        """,
-                        returnStdout: true
-                    ).trim()
+        //             def resp = bat(
+        //                 script: """
+        //                     curl -s -X POST "${env.RTM_URL}/api/v2/automation/import-test-results" ^
+        //                         -H "Authorization: Bearer ${env.RTM_API_TOKEN}" ^
+        //                         -F projectKey="${params.RTM_PROJECT_KEY}" ^
+        //                         -F testExecutionKey="${params.RTM_TEST_EXEC_KEY}" ^
+        //                         -F reportType="JUNIT" ^
+        //                         -F file=@rtm.zip
+        //                 """,
+        //                 returnStdout: true
+        //             ).trim()
 
-                    echo "RTM Response: ${resp}"
-                }
-            }
+        //             echo "RTM Response: ${resp}"
+        //         }
+        //     }
+        // }
+
+        stage('Upload RTM Test Results') {
+                steps {
+                        echo "Uploading JUnit test results to RTM..."
+                        bat(script: '''
+                        curl -s -X POST "https://rtm-cloud.herokuapp.com/api/v2/automation/import-test-results" ^
+                        -H "Authorization: Bearer %RTM_API_TOKEN%" ^
+                        -F projectKey="''' + RTM_PROJECT + '''" ^
+                        -F testExecutionKey="''' + TEST_EXECUTION + '''" ^
+                        -F reportType="JUNIT" ^
+                        -F jobUrl="''' + BUILD_URL + '''" ^
+                        -F file=@rtm.zip
+                        ''')
+                    }
         }
+
 
         stage('Email Report') {
             steps {
