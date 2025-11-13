@@ -1,0 +1,10 @@
+pipeline:
+  language: maven
+  reporting:
+    format: html
+    charts: true
+    traffic_light: true
+  rtm:
+    enabled: true
+    upload_results: true
+    link_in_email: true

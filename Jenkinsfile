@@ -1,0 +1,99 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'RTM_PROJECT_KEY', defaultValue: 'RTM-PROJ')
+        string(name: 'RTM_TEST_EXEC_KEY', defaultValue: 'RTM-TE-1')
+    }
+
+    environment {
+        RTM_API_TOKEN = credentials('rtm-api-token')
+        RTM_URL       = 'https://your-rtm-instance.com'
+        EMAIL_TO      = 'qa-team@company.com,dev-team@company.com'
+        COMPANY_LOGO  = 'https://your-company.com/logo.png'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Build & Test') {
+            steps { bat 'mvn clean test' }
+            post { always { junit 'target/surefire-reports/*.xml' } }
+        }
+
+        stage('Generate HTML Report') {
+            steps {
+                bat """
+                    python scripts\\generate_rtm_report.py ^
+                        --input target\\surefire-reports ^
+                        --output reports\\rtm-report.html ^
+                        --title "RTM Build #${env.BUILD_NUMBER}" ^
+                        --test-execution-key "${params.RTM_TEST_EXEC_KEY}"
+                """
+                archiveArtifacts artifacts: 'reports/rtm-report.html'
+            }
+        }
+
+        stage('Import to RTM') {
+            steps {
+                script {
+                    bat """
+                        powershell -Command "Compress-Archive -Path 'target\\surefire-reports\\*.xml' -DestinationPath 'rtm.zip' -Force"
+                    """
+
+                    def resp = bat(
+                        script: """
+                            curl -s -X POST "${env.RTM_URL}/api/v2/automation/import-test-results" ^
+                            -H "Authorization: Bearer ${env.RTM_API_TOKEN}" ^
+                            -F projectKey="${params.RTM_PROJECT_KEY}" ^
+                            -F testExecutionKey="${params.RTM_TEST_EXEC_KEY}" ^
+                            -F reportType="JUNIT" ^
+                            -F file=@rtm.zip
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    echo "RTM Response: ${resp}"
+                }
+            }
+        }
+
+        stage('Email Report') {
+            steps {
+                emailext(
+                    subject: "RTM Test Report - Build #${env.BUILD_NUMBER}",
+                    to: "${env.EMAIL_TO}",
+                    mimeType: 'text/html',
+                    body: """
+                        <div style='font-family:Arial;font-size:14px;'>
+                            <img src='${env.COMPANY_LOGO}' style='height:45px;'><br><br>
+
+                            <h2>RTM Test Execution Report</h2>
+
+                            <p>RTM Project: <b>${params.RTM_PROJECT_KEY}</b><br>
+                            Execution Key: <b>${params.RTM_TEST_EXEC_KEY}</b></p>
+
+                            <p><a href="${env.RTM_URL}/projects/${params.RTM_PROJECT_KEY}/test-executions/${params.RTM_TEST_EXEC_KEY}" target="_blank">
+                                Open RTM Execution</a></p>
+
+                            <p><a href="${env.BUILD_URL}artifact/reports/rtm-report.html" target="_blank">
+                                View HTML Traffic-Light Report</a></p>
+
+                            <p>Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+
+                            <br>Regards,<br>Automation
+                        </div>
+                    """
+                )
+            }
+        }
+    }
+
+    post {
+        success { echo "Pipeline completed successfully." }
+        failure { echo "Pipeline failed." }
+    }
+}

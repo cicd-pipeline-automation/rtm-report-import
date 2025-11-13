@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="SampleSuite" tests="4" failures="1" errors="0" skipped="1" time="1.234">
+
+    <testcase classname="com.example.CalculatorTest" name="testAddition" time="0.010"/>
+
+    <testcase classname="com.example.CalculatorTest" name="testSubtraction" time="0.020">
+        <failure message="Expected 5 but got 3">AssertionError: 5 != 3</failure>
+    </testcase>
+
+    <testcase classname="com.example.CalculatorTest" name="testMultiplication" time="0.015">
+        <skipped message="Feature not implemented yet"/>
+    </testcase>
+
+    <testcase classname="com.example.CalculatorTest" name="testDivision" time="0.012"/>
+
+</testsuite>
