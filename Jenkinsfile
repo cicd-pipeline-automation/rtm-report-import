@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         RTM_API_TOKEN = credentials('rtm-api-token')
-        RTM_URL       = 'https://https://rtm-cloud.herokuapp.com'
+        RTM_URL       = 'https://rtm-cloud.herokuapp.com'
         EMAIL_TO      = 'devopsuser8413@gmail.com,ru85206315@gmail.com,ruser3015@gmail.com'
         COMPANY_LOGO  = 'https://your-company.com/logo.png'
     }
