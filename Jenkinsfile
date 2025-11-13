@@ -65,20 +65,20 @@ pipeline {
         // }
 
         stage('Upload RTM Test Results') {
-                steps {
-                        echo "Uploading JUnit test results to RTM..."
-                        bat(script: '''
-                        curl -s -X POST "https://rtm-cloud.herokuapp.com/api/v2/automation/import-test-results" ^
-                        -H "Authorization: Bearer %RTM_API_TOKEN%" ^
-                        -F projectKey="''' + RTM_PROJECT + '''" ^
-                        -F testExecutionKey="''' + TEST_EXECUTION + '''" ^
-                        -F reportType="JUNIT" ^
-                        -F jobUrl="''' + BUILD_URL + '''" ^
-                        -F file=@rtm.zip
-                        ''')
-                    }
-        }
+            steps {
+                echo "Uploading JUnit test results to RTM..."
 
+                bat(script: '''
+        curl -s -X POST "https://rtm-cloud.herokuapp.com/api/v2/automation/import-test-results" ^
+        -H "Authorization: Bearer %RTM_API_TOKEN%" ^
+        -F projectKey="%RTM_PROJECT%" ^
+        -F testExecutionKey="%TEST_EXECUTION%" ^
+        -F reportType="JUNIT" ^
+        -F jobUrl="%BUILD_URL%" ^
+        -F file=@rtm.zip
+        ''')
+            }
+        }
 
         stage('Email Report') {
             steps {
