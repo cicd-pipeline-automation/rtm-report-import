@@ -21,9 +21,9 @@ pipeline {
 
         stage('Prepare Test Results') {
             steps {
-                echo "Using existing JUnit XML files in sample_junit_reports folder"
+                echo "Copying JUnit XML from tests folder..."
                 bat "mkdir target"
-                bat "copy sample_junit_reports\\*.xml target\\"
+                bat "copy tests\\sample_junit_1.xml target\\"
             }
         }
 
