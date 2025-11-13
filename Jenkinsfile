@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'RTM_PROJECT_KEY', defaultValue: 'RTM-DEMO')
-        string(name: 'RTM_TEST_EXEC_KEY', defaultValue: 'RD-4')
+        string(name: 'RTM_PROJECT', defaultValue: 'RTM-DEMO', description: 'RTM Project Key')
+        string(name: 'TEST_EXECUTION', defaultValue: 'RD-4', description: 'RTM Test Execution Key')
     }
 
     environment {
@@ -11,6 +11,8 @@ pipeline {
         RTM_URL       = 'https://rtm-cloud.herokuapp.com'
         EMAIL_TO      = 'devopsuser8413@gmail.com,ru85206315@gmail.com,ruser3015@gmail.com'
         COMPANY_LOGO  = 'https://your-company.com/logo.png'
+        RTM_PROJECT = "${params.RTM_PROJECT}"
+        TEST_EXECUTION = "${params.TEST_EXECUTION}"
     }
     
     stages {
@@ -67,16 +69,15 @@ pipeline {
         stage('Upload RTM Test Results') {
             steps {
                 echo "Uploading JUnit test results to RTM..."
-
                 bat(script: '''
-        curl -s -X POST "https://rtm-cloud.herokuapp.com/api/v2/automation/import-test-results" ^
-        -H "Authorization: Bearer %RTM_API_TOKEN%" ^
-        -F projectKey="%RTM_PROJECT%" ^
-        -F testExecutionKey="%TEST_EXECUTION%" ^
-        -F reportType="JUNIT" ^
-        -F jobUrl="%BUILD_URL%" ^
-        -F file=@rtm.zip
-        ''')
+                curl -s -X POST "https://rtm-cloud.herokuapp.com/api/v2/automation/import-test-results" ^
+                -H "Authorization: Bearer %RTM_API_TOKEN%" ^
+                -F projectKey="%RTM_PROJECT%" ^
+                -F testExecutionKey="%TEST_EXECUTION%" ^
+                -F reportType="JUNIT" ^
+                -F jobUrl="%BUILD_URL%" ^
+                -F file=@rtm.zip
+                ''')
             }
         }
 
