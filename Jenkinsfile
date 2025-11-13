@@ -16,7 +16,7 @@ pipeline {
         EMAIL_TO      = 'devopsuser8413@gmail.com,ru85206315@gmail.com,ruser3015@gmail.com'
         COMPANY_LOGO  = 'https://your-company.com/logo.png'
     }
-
+    
     stages {
 
         stage('Checkout') {
@@ -41,16 +41,14 @@ pipeline {
 
         stage('Generate HTML Report') {
             steps {
-                script {
-                    bat """
-                        python scripts\\generate_rtm_report.py ^
-                            --input target\\surefire-reports ^
-                            --output reports\\rtm-report.html ^
-                            --title "RTM Build #${env.BUILD_NUMBER}" ^
-                            --test-execution-key "${params.RTM_TEST_EXEC_KEY}"
-                    """
-                }
-                archiveArtifacts artifacts: 'reports/rtm-report.html'
+                bat """
+                    python scripts\\generate_rtm_report.py ^
+                        --input target\\surefire-reports ^
+                        --output reports\\rtm-report.html ^
+                        --title "RTM Build #${env.BUILD_NUMBER}" ^
+                        --test-execution-key "${params.RTM_TEST_EXEC_KEY}"
+                """
+                archiveArtifacts artifacts: 'reports/rtm-report.html', fingerprint: true
             }
         }
 
@@ -58,7 +56,8 @@ pipeline {
             steps {
                 script {
                     bat """
-                        powershell -Command "Compress-Archive -Path 'target\\surefire-reports\\*.xml' -DestinationPath 'rtm.zip' -Force"
+                        powershell -Command "Compress-Archive -Path 'target\\surefire-reports\\*.xml' `
+                            -DestinationPath 'rtm.zip' -Force"
                     """
 
                     def resp = bat(
@@ -101,7 +100,7 @@ pipeline {
 
                             <p>Build URL: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
 
-                            <br>Regards,<br>Automation
+                            <br>Regards,<br>Automation Team
                         </div>
                     """
                 )
