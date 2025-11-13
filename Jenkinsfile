@@ -22,8 +22,8 @@ pipeline {
         stage('Prepare Test Results') {
             steps {
                 echo "Copying JUnit XML from tests folder..."
-                bat "mkdir target"
-                bat "copy tests\\sample_junit_1.xml target\\"
+                bat 'powershell -Command "New-Item -ItemType Directory -Force -Path target"'
+                bat 'copy tests\\sample_junit_1.xml target\\'
             }
         }
 
