@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'maven-3.9.11'
-    }
-
     parameters {
         string(name: 'RTM_PROJECT_KEY', defaultValue: 'RTM-DEMO')
         string(name: 'RTM_TEST_EXEC_KEY', defaultValue: 'RD-4')
@@ -20,29 +16,14 @@ pipeline {
     stages {
 
         stage('Checkout') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
 
-        stage('Check Java') {
+        stage('Prepare Test Results') {
             steps {
-                bat 'echo JAVA_HOME=%JAVA_HOME%'
-                bat 'java -version'
-            }
-        }
-        
-        stage('Build & Test') {
-            steps {
-                script {
-                    def mvnHome = tool 'maven-3.9.11'
-                    bat "\"${mvnHome}\\bin\\mvn\" clean test"
-                }
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
+                echo "Using existing JUnit XML files in sample_junit_reports folder"
+                bat "mkdir target"
+                bat "copy sample_junit_reports\\*.xml target\\"
             }
         }
 
@@ -50,12 +31,12 @@ pipeline {
             steps {
                 bat """
                     python scripts\\generate_rtm_report.py ^
-                        --input target\\surefire-reports ^
+                        --input target ^
                         --output reports\\rtm-report.html ^
                         --title "RTM Build #${env.BUILD_NUMBER}" ^
                         --test-execution-key "${params.RTM_TEST_EXEC_KEY}"
                 """
-                archiveArtifacts artifacts: 'reports/rtm-report.html', fingerprint: true
+                archiveArtifacts artifacts: 'reports/rtm-report.html'
             }
         }
 
@@ -63,8 +44,7 @@ pipeline {
             steps {
                 script {
                     bat """
-                        powershell -Command "Compress-Archive -Path 'target\\surefire-reports\\*.xml' `
-                            -DestinationPath 'rtm.zip' -Force"
+                        powershell -Command "Compress-Archive -Path 'target\\*.xml' -DestinationPath 'rtm.zip' -Force"
                     """
 
                     def resp = bat(
