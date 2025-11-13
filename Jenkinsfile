@@ -1,38 +1,55 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'maven-3.9.11'
+    }
+
     parameters {
-        string(name: 'RTM_PROJECT_KEY', defaultValue: 'RTM-PROJ')
-        string(name: 'RTM_TEST_EXEC_KEY', defaultValue: 'RTM-TE-1')
+        string(name: 'RTM_PROJECT_KEY', defaultValue: 'RTM-DEMO')
+        string(name: 'RTM_TEST_EXEC_KEY', defaultValue: 'RD-4')
     }
 
     environment {
         RTM_API_TOKEN = credentials('rtm-api-token')
-        RTM_URL       = 'https://your-rtm-instance.com'
-        EMAIL_TO      = 'qa-team@company.com,dev-team@company.com'
+        RTM_URL       = 'https://https://rtm-cloud.herokuapp.com'
+        EMAIL_TO      = 'devopsuser8413@gmail.com,ru85206315@gmail.com,ruser3015@gmail.com'
         COMPANY_LOGO  = 'https://your-company.com/logo.png'
     }
 
     stages {
 
         stage('Checkout') {
-            steps { checkout scm }
+            steps {
+                checkout scm
+            }
         }
 
         stage('Build & Test') {
-            steps { bat 'mvn clean test' }
-            post { always { junit 'target/surefire-reports/*.xml' } }
+            steps {
+                script {
+                    def mvnHome = tool 'maven-3.9.11'
+                    bat "\"${mvnHome}\\bin\\mvn\" clean test"
+                }
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
         }
 
         stage('Generate HTML Report') {
             steps {
-                bat """
-                    python scripts\\generate_rtm_report.py ^
-                        --input target\\surefire-reports ^
-                        --output reports\\rtm-report.html ^
-                        --title "RTM Build #${env.BUILD_NUMBER}" ^
-                        --test-execution-key "${params.RTM_TEST_EXEC_KEY}"
-                """
+                script {
+                    bat """
+                        python scripts\\generate_rtm_report.py ^
+                            --input target\\surefire-reports ^
+                            --output reports\\rtm-report.html ^
+                            --title "RTM Build #${env.BUILD_NUMBER}" ^
+                            --test-execution-key "${params.RTM_TEST_EXEC_KEY}"
+                    """
+                }
                 archiveArtifacts artifacts: 'reports/rtm-report.html'
             }
         }
@@ -47,11 +64,11 @@ pipeline {
                     def resp = bat(
                         script: """
                             curl -s -X POST "${env.RTM_URL}/api/v2/automation/import-test-results" ^
-                            -H "Authorization: Bearer ${env.RTM_API_TOKEN}" ^
-                            -F projectKey="${params.RTM_PROJECT_KEY}" ^
-                            -F testExecutionKey="${params.RTM_TEST_EXEC_KEY}" ^
-                            -F reportType="JUNIT" ^
-                            -F file=@rtm.zip
+                                -H "Authorization: Bearer ${env.RTM_API_TOKEN}" ^
+                                -F projectKey="${params.RTM_PROJECT_KEY}" ^
+                                -F testExecutionKey="${params.RTM_TEST_EXEC_KEY}" ^
+                                -F reportType="JUNIT" ^
+                                -F file=@rtm.zip
                         """,
                         returnStdout: true
                     ).trim()
